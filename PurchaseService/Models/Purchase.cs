@@ -7,9 +7,11 @@ public class Purchase
     public int PurchaseId { get; set; }
     
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "BuyerId must be greater than 0")]
     public int BuyerId { get; set; }
     
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "OfferId must be greater than 0")]
     public int OfferId { get; set; }
     
     [Required]
@@ -20,7 +22,7 @@ public class Purchase
     public decimal Amount { get; set; }
     
     [Required]
-    [StringLength(50)]
+    [StringLength(50, MinimumLength = 1, ErrorMessage = "Status must be between 1 and 50 characters")]
     public string Status { get; set; } = "Pending";
     
     [Required]
