@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PurchaseService.Configuration;
 using PurchaseService.Events;
+using PurchaseService.Models;
 using PurchaseService.Services;
 using RabbitMQ.Client;
 
@@ -77,13 +78,21 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
 
         try
         {
+            // Extract the appropriate ID to use as entityId
+            string entityId = eventData switch
+            {
+                Purchase purchase => purchase.PurchaseId.ToString(),
+                PurchaseEventData purchaseEventData => purchaseEventData.PurchaseId.ToString(),
+                _ => Guid.NewGuid().ToString()
+            };
+
             var purchaseEvent = new PurchaseEvent
             {
                 EventType = eventType,
-                EventTimestamp = DateTime.UtcNow,
-                EventId = Guid.NewGuid().ToString(),
-                EntityType = "Purchase",
-                Payload = eventData as PurchaseEventData ?? new PurchaseEventData()
+                EntityType = "PURCHASE",
+                EntityId = entityId,
+                OccurredAt = DateTime.UtcNow,
+                Payload = eventData // Use the actual data being created/updated
             };
 
             var message = JsonSerializer.Serialize(purchaseEvent, new JsonSerializerOptions
@@ -94,10 +103,10 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
             var body = Encoding.UTF8.GetBytes(message);
 
             var routingKey = eventType switch
-            {
-                "PurchaseCreated" => "purchase.created",
-                "PurchaseUpdated" => "purchase.updated",
-                _ => "purchase.unknown"
+            { 
+                "PurchaseCreated" => "search.purchase.created",
+                "PurchaseUpdated" => "search.purchase.updated",
+                _ => "search.event.unknown"
             };
 
             _channel.BasicPublish(
@@ -106,7 +115,7 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
                 basicProperties: null,
                 body: body);
 
-            _logger.LogInformation("Published event {EventType} for event ID {EventId}", eventType, purchaseEvent.EventId);
+            _logger.LogInformation("Published event {EventType} for entity ID {EntityId}", eventType, purchaseEvent.EntityId);
 
             await Task.CompletedTask;
         }

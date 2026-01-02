@@ -96,18 +96,15 @@ public class PurchasesController : ControllerBase
             _context.Purchases.Add(purchase);
             await _context.SaveChangesAsync();
 
-            // Publish PurchaseCreated event
+            // Publish PurchaseCreated event with specific event data structure
             var eventData = new PurchaseEventData
             {
-                PurchaseId = purchase.PurchaseId,
-                BuyerId = purchase.BuyerId,
-                OfferId = purchase.OfferId,
-                PurchaseDate = purchase.PurchaseDate,
+                PurchaseId = purchase.PurchaseId.ToString(),
+                BuyerId = purchase.BuyerId.ToString(),
+                OfferId = purchase.OfferId.ToString(),
                 Amount = purchase.Amount,
                 Status = purchase.Status,
-                BuyerDetails = purchase.BuyerDetails,
-                CreatedAt = purchase.CreatedAt,
-                UpdatedAt = purchase.UpdatedAt
+                PurchaseDate = purchase.PurchaseDate
             };
 
             await _eventPublisher.PublishAsync(eventData, "PurchaseCreated");
@@ -150,18 +147,18 @@ public class PurchasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            // Publish PurchaseUpdated event
+            // Reload the entity to ensure we have all the updated data
+            await _context.Entry(existingPurchase).ReloadAsync();
+
+            // Publish PurchaseUpdated event with specific event data structure
             var eventData = new PurchaseEventData
             {
-                PurchaseId = existingPurchase.PurchaseId,
-                BuyerId = existingPurchase.BuyerId,
-                OfferId = existingPurchase.OfferId,
-                PurchaseDate = existingPurchase.PurchaseDate,
+                PurchaseId = existingPurchase.PurchaseId.ToString(),
+                BuyerId = existingPurchase.BuyerId.ToString(),
+                OfferId = existingPurchase.OfferId.ToString(),
                 Amount = existingPurchase.Amount,
                 Status = existingPurchase.Status,
-                BuyerDetails = existingPurchase.BuyerDetails,
-                CreatedAt = existingPurchase.CreatedAt,
-                UpdatedAt = existingPurchase.UpdatedAt
+                PurchaseDate = existingPurchase.PurchaseDate
             };
 
             await _eventPublisher.PublishAsync(eventData, "PurchaseUpdated");
@@ -240,4 +237,6 @@ public class PurchasesController : ControllerBase
             return StatusCode(500, "An error occurred while retrieving purchases");
         }
     }
+
+    
 }
