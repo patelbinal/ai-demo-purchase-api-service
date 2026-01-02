@@ -97,7 +97,7 @@ public class PurchasesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Publish PurchaseCreated event
-            var eventData = new PurchaseEventData
+            var purchaseCreatedEvent = new PurchaseCreatedEvent
             {
                 PurchaseId = purchase.PurchaseId,
                 BuyerId = purchase.BuyerId,
@@ -106,11 +106,10 @@ public class PurchasesController : ControllerBase
                 Amount = purchase.Amount,
                 Status = purchase.Status,
                 BuyerDetails = purchase.BuyerDetails,
-                CreatedAt = purchase.CreatedAt,
-                UpdatedAt = purchase.UpdatedAt
+                CreatedAt = purchase.CreatedAt
             };
 
-            await _eventPublisher.PublishAsync(eventData, "PurchaseCreated");
+            await _eventPublisher.PublishAsync(purchaseCreatedEvent);
 
             _logger.LogInformation("Purchase created with ID {PurchaseId} and event published", purchase.PurchaseId);
 
@@ -151,7 +150,7 @@ public class PurchasesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Publish PurchaseUpdated event
-            var eventData = new PurchaseEventData
+            var purchaseUpdatedEvent = new PurchaseUpdatedEvent
             {
                 PurchaseId = existingPurchase.PurchaseId,
                 BuyerId = existingPurchase.BuyerId,
@@ -160,11 +159,10 @@ public class PurchasesController : ControllerBase
                 Amount = existingPurchase.Amount,
                 Status = existingPurchase.Status,
                 BuyerDetails = existingPurchase.BuyerDetails,
-                CreatedAt = existingPurchase.CreatedAt,
                 UpdatedAt = existingPurchase.UpdatedAt
             };
 
-            await _eventPublisher.PublishAsync(eventData, "PurchaseUpdated");
+            await _eventPublisher.PublishAsync(purchaseUpdatedEvent);
 
             _logger.LogInformation("Purchase updated with ID {PurchaseId} and event published", existingPurchase.PurchaseId);
 

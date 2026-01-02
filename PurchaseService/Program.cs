@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using MassTransit;
 using PurchaseService.Configuration;
 using PurchaseService.Data;
 using PurchaseService.Services;
+using PurchaseService.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,11 +15,29 @@ builder.Services.AddDbContext<PurchaseDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add RabbitMQ settings
-builder.Services.Configure<RabbitMQSettings>(
-    builder.Configuration.GetSection("RabbitMQ"));
+var rabbitMqSettings = builder.Configuration.GetSection("RabbitMQ").Get<RabbitMQSettings>() ?? new RabbitMQSettings();
+
+// Configure MassTransit with RabbitMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(rabbitMqSettings.Host, rabbitMqSettings.VirtualHost, h =>
+        {
+            h.Username(rabbitMqSettings.Username);
+            h.Password(rabbitMqSettings.Password);
+        });
+
+        // Configure message topology
+        cfg.Message<IPurchaseCreated>(x => x.SetEntityName("Purchase"));
+        cfg.Message<IPurchaseUpdated>(x => x.SetEntityName("Purchase"));
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 // Register Event Publisher
-builder.Services.AddSingleton<IEventPublisher, RabbitMQEventPublisher>();
+builder.Services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

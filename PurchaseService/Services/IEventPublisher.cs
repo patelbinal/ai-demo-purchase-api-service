@@ -1,8 +1,6 @@
-using PurchaseService.Events;
-
 namespace PurchaseService.Services;
 
 public interface IEventPublisher
 {
-    Task PublishAsync<T>(T eventData, string eventType) where T : class;
+    Task PublishAsync<T>(T message) where T : class;
 }
