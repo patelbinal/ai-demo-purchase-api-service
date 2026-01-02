@@ -80,10 +80,10 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
             var purchaseEvent = new PurchaseEvent
             {
                 EventType = eventType,
-                EventTimestamp = DateTime.UtcNow,
-                EventId = Guid.NewGuid().ToString(),
-                EntityType = "Purchase",
-                Payload = eventData as PurchaseEventData ?? new PurchaseEventData()
+                EntityType = "PURCHASE",
+                EntityId = Guid.NewGuid().ToString(),
+                OccurredAt = DateTime.UtcNow,
+                Payload = eventData // Use the actual data being created/updated
             };
 
             var message = JsonSerializer.Serialize(purchaseEvent, new JsonSerializerOptions
@@ -94,10 +94,10 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
             var body = Encoding.UTF8.GetBytes(message);
 
             var routingKey = eventType switch
-            {
-                "PurchaseCreated" => "purchase.created",
-                "PurchaseUpdated" => "purchase.updated",
-                _ => "purchase.unknown"
+            { 
+                "PurchaseCreated" => "search.purchase.created",
+                "PurchaseUpdated" => "search.purchase.updated",
+                _ => "search.event.unknown"
             };
 
             _channel.BasicPublish(
@@ -106,7 +106,7 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
                 basicProperties: null,
                 body: body);
 
-            _logger.LogInformation("Published event {EventType} for event ID {EventId}", eventType, purchaseEvent.EventId);
+            _logger.LogInformation("Published event {EventType} for entity ID {EntityId}", eventType, purchaseEvent.EntityId);
 
             await Task.CompletedTask;
         }

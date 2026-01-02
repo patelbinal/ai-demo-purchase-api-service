@@ -96,21 +96,8 @@ public class PurchasesController : ControllerBase
             _context.Purchases.Add(purchase);
             await _context.SaveChangesAsync();
 
-            // Publish PurchaseCreated event
-            var eventData = new PurchaseEventData
-            {
-                PurchaseId = purchase.PurchaseId,
-                BuyerId = purchase.BuyerId,
-                OfferId = purchase.OfferId,
-                PurchaseDate = purchase.PurchaseDate,
-                Amount = purchase.Amount,
-                Status = purchase.Status,
-                BuyerDetails = purchase.BuyerDetails,
-                CreatedAt = purchase.CreatedAt,
-                UpdatedAt = purchase.UpdatedAt
-            };
-
-            await _eventPublisher.PublishAsync(eventData, "PurchaseCreated");
+            // Publish PurchaseCreated event with actual purchase data as payload
+            await _eventPublisher.PublishAsync(purchase, "PurchaseCreated");
 
             _logger.LogInformation("Purchase created with ID {PurchaseId} and event published", purchase.PurchaseId);
 
@@ -150,21 +137,11 @@ public class PurchasesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            // Publish PurchaseUpdated event
-            var eventData = new PurchaseEventData
-            {
-                PurchaseId = existingPurchase.PurchaseId,
-                BuyerId = existingPurchase.BuyerId,
-                OfferId = existingPurchase.OfferId,
-                PurchaseDate = existingPurchase.PurchaseDate,
-                Amount = existingPurchase.Amount,
-                Status = existingPurchase.Status,
-                BuyerDetails = existingPurchase.BuyerDetails,
-                CreatedAt = existingPurchase.CreatedAt,
-                UpdatedAt = existingPurchase.UpdatedAt
-            };
+            // Reload the entity to ensure we have all the updated data
+            await _context.Entry(existingPurchase).ReloadAsync();
 
-            await _eventPublisher.PublishAsync(eventData, "PurchaseUpdated");
+            // Publish PurchaseUpdated event with actual purchase data as payload
+            await _eventPublisher.PublishAsync(existingPurchase, "PurchaseUpdated");
 
             _logger.LogInformation("Purchase updated with ID {PurchaseId} and event published", existingPurchase.PurchaseId);
 
@@ -240,4 +217,6 @@ public class PurchasesController : ControllerBase
             return StatusCode(500, "An error occurred while retrieving purchases");
         }
     }
+
+    
 }
