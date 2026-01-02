@@ -34,6 +34,22 @@ public class PurchasesController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
+        // Validate query parameters
+        if (page < 1)
+            return BadRequest("Page number must be greater than 0");
+            
+        if (pageSize < 1 || pageSize > 100)
+            return BadRequest("Page size must be between 1 and 100");
+            
+        if (buyerId.HasValue && buyerId <= 0)
+            return BadRequest("BuyerId must be greater than 0");
+            
+        if (offerId.HasValue && offerId <= 0)
+            return BadRequest("OfferId must be greater than 0");
+            
+        if (!string.IsNullOrEmpty(status) && !IsValidStatus(status))
+            return BadRequest("Invalid status. Valid values are: Pending, Processing, Completed, Cancelled, Refunded");
+
         try
         {
             var query = _context.Purchases.AsQueryable();
@@ -66,6 +82,9 @@ public class PurchasesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Purchase>> GetPurchase(int id)
     {
+        if (id <= 0)
+            return BadRequest("Purchase ID must be greater than 0");
+            
         try
         {
             var purchase = await _context.Purchases.FindAsync(id);
@@ -88,6 +107,17 @@ public class PurchasesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Purchase>> CreatePurchase(Purchase purchase)
     {
+        // Validate model state
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        
+        // Additional business logic validation
+        var validationResult = ValidatePurchaseForCreation(purchase);
+        if (validationResult != null)
+            return validationResult;
+
         try
         {
             purchase.CreatedAt = DateTime.UtcNow;
@@ -124,10 +154,19 @@ public class PurchasesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePurchase(int id, Purchase purchase)
     {
-        //if (id != purchase.PurchaseId)
-        //{
-        //    return BadRequest("Purchase ID mismatch");
-        //}
+        if (id <= 0)
+            return BadRequest("Purchase ID must be greater than 0");
+            
+        // Validate model state
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        
+        // Additional business logic validation
+        var validationResult = ValidatePurchaseForUpdate(purchase);
+        if (validationResult != null)
+            return validationResult;
 
         try
         {
@@ -178,6 +217,9 @@ public class PurchasesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePurchase(int id)
     {
+        if (id <= 0)
+            return BadRequest("Purchase ID must be greater than 0");
+            
         try
         {
             var purchase = await _context.Purchases.FindAsync(id);
@@ -202,6 +244,9 @@ public class PurchasesController : ControllerBase
     [HttpGet("buyer/{buyerId}")]
     public async Task<ActionResult<IEnumerable<Purchase>>> GetPurchasesByBuyer(int buyerId)
     {
+        if (buyerId <= 0)
+            return BadRequest("Buyer ID must be greater than 0");
+            
         try
         {
             var purchases = await _context.Purchases
@@ -222,6 +267,9 @@ public class PurchasesController : ControllerBase
     [HttpGet("offer/{offerId}")]
     public async Task<ActionResult<IEnumerable<Purchase>>> GetPurchasesByOffer(int offerId)
     {
+        if (offerId <= 0)
+            return BadRequest("Offer ID must be greater than 0");
+            
         try
         {
             var purchases = await _context.Purchases
@@ -238,5 +286,47 @@ public class PurchasesController : ControllerBase
         }
     }
 
+    #region Validation Helper Methods
     
+    private static bool IsValidStatus(string status)
+    {
+        var validStatuses = new[] { "Pending", "Processing", "Completed", "Cancelled", "Refunded" };
+        return validStatuses.Contains(status, StringComparer.OrdinalIgnoreCase);
+    }
+    
+    private static bool IsValidPaymentMethod(string paymentMethod)
+    {
+        var validMethods = new[] { "CreditCard", "DebitCard", "PayPal", "BankTransfer", "Cash" };
+        return validMethods.Contains(paymentMethod, StringComparer.OrdinalIgnoreCase);
+    }
+    
+    private ActionResult? ValidatePurchaseForCreation(Purchase purchase)
+    {
+        // Validate purchase date is not in the future beyond a reasonable threshold
+        if (purchase.PurchaseDate > DateTime.UtcNow.AddMinutes(5))
+            return BadRequest("Purchase date cannot be more than 5 minutes in the future");
+        
+        // Validate purchase date is not too old
+        if (purchase.PurchaseDate < DateTime.UtcNow.AddYears(-5))
+            return BadRequest("Purchase date cannot be more than 5 years in the past");
+            
+        // Validate status
+        if (!IsValidStatus(purchase.Status))
+            return BadRequest("Invalid status. Valid values are: Pending, Processing, Completed, Cancelled, Refunded");
+            
+        // Validate payment method
+        if (!string.IsNullOrEmpty(purchase.BuyerDetails?.PaymentMethod) && 
+            !IsValidPaymentMethod(purchase.BuyerDetails.PaymentMethod))
+            return BadRequest("Invalid payment method. Valid values are: CreditCard, DebitCard, PayPal, BankTransfer, Cash");
+            
+        return null;
+    }
+    
+    private ActionResult? ValidatePurchaseForUpdate(Purchase purchase)
+    {
+        // Same validation as creation, but may have different rules for updates
+        return ValidatePurchaseForCreation(purchase);
+    }
+    
+    #endregion
 }
