@@ -13,13 +13,12 @@ public class PurchaseEvent
 
 public class PurchaseEventData
 {
-    public int PurchaseId { get; set; }
-    public int BuyerId { get; set; }
-    public int OfferId { get; set; }
-    public DateTime PurchaseDate { get; set; }
+    // Identity
+    public string PurchaseId { get; set; } = default!;
+    public string BuyerId { get; set; } = default!;
+    public string OfferId { get; set; } = default!;
+    // Purchase details
     public decimal Amount { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public BuyerDetails BuyerDetails { get; set; } = new BuyerDetails();
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public string Status { get; set; } = default!;
+    public DateTime PurchaseDate { get; set; }
 }

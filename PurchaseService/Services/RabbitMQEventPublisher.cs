@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PurchaseService.Configuration;
 using PurchaseService.Events;
+using PurchaseService.Models;
 using PurchaseService.Services;
 using RabbitMQ.Client;
 
@@ -77,11 +78,19 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
 
         try
         {
+            // Extract the appropriate ID to use as entityId
+            string entityId = eventData switch
+            {
+                Purchase purchase => purchase.PurchaseId.ToString(),
+                PurchaseEventData purchaseEventData => purchaseEventData.PurchaseId.ToString(),
+                _ => Guid.NewGuid().ToString()
+            };
+
             var purchaseEvent = new PurchaseEvent
             {
                 EventType = eventType,
                 EntityType = "PURCHASE",
-                EntityId = Guid.NewGuid().ToString(),
+                EntityId = entityId,
                 OccurredAt = DateTime.UtcNow,
                 Payload = eventData // Use the actual data being created/updated
             };

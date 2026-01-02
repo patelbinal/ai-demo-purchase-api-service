@@ -96,8 +96,18 @@ public class PurchasesController : ControllerBase
             _context.Purchases.Add(purchase);
             await _context.SaveChangesAsync();
 
-            // Publish PurchaseCreated event with actual purchase data as payload
-            await _eventPublisher.PublishAsync(purchase, "PurchaseCreated");
+            // Publish PurchaseCreated event with specific event data structure
+            var eventData = new PurchaseEventData
+            {
+                PurchaseId = purchase.PurchaseId.ToString(),
+                BuyerId = purchase.BuyerId.ToString(),
+                OfferId = purchase.OfferId.ToString(),
+                Amount = purchase.Amount,
+                Status = purchase.Status,
+                PurchaseDate = purchase.PurchaseDate
+            };
+
+            await _eventPublisher.PublishAsync(eventData, "PurchaseCreated");
 
             _logger.LogInformation("Purchase created with ID {PurchaseId} and event published", purchase.PurchaseId);
 
@@ -140,8 +150,18 @@ public class PurchasesController : ControllerBase
             // Reload the entity to ensure we have all the updated data
             await _context.Entry(existingPurchase).ReloadAsync();
 
-            // Publish PurchaseUpdated event with actual purchase data as payload
-            await _eventPublisher.PublishAsync(existingPurchase, "PurchaseUpdated");
+            // Publish PurchaseUpdated event with specific event data structure
+            var eventData = new PurchaseEventData
+            {
+                PurchaseId = existingPurchase.PurchaseId.ToString(),
+                BuyerId = existingPurchase.BuyerId.ToString(),
+                OfferId = existingPurchase.OfferId.ToString(),
+                Amount = existingPurchase.Amount,
+                Status = existingPurchase.Status,
+                PurchaseDate = existingPurchase.PurchaseDate
+            };
+
+            await _eventPublisher.PublishAsync(eventData, "PurchaseUpdated");
 
             _logger.LogInformation("Purchase updated with ID {PurchaseId} and event published", existingPurchase.PurchaseId);
 
