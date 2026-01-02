@@ -14,17 +14,21 @@ public class PurchaseCreatedConsumer : IConsumer<IPurchaseCreated>
 
     public async Task Consume(ConsumeContext<IPurchaseCreated> context)
     {
-        var message = context.Message;
+        var envelope = context.Message;
+        var payload = (envelope as PurchaseCreated)?.Payload;
         
-        _logger.LogInformation(
-            "Received PurchaseCreated event - PurchaseId: {PurchaseId}, BuyerId: {BuyerId}, Amount: {Amount}",
-            message.PurchaseId, message.BuyerId, message.Amount);
+        if (payload != null)
+        {
+            _logger.LogInformation(
+                "Received {EventType} event - EntityType: {EntityType}, EntityId: {EntityId}, PurchaseId: {PurchaseId}, BuyerId: {BuyerId}, Amount: {Amount}",
+                envelope.EventType, envelope.EntityType, envelope.EntityId, payload.PurchaseId, payload.BuyerId, payload.Amount);
 
-        // Add your business logic here
-        // For example:
-        // - Send notification emails
-        // - Update analytics
-        // - Trigger other business processes
+            // Add your business logic here
+            // For example:
+            // - Send notification emails
+            // - Update analytics
+            // - Trigger other business processes
+        }
         
         await Task.CompletedTask;
     }

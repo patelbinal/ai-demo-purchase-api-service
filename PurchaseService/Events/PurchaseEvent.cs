@@ -2,39 +2,54 @@ using PurchaseService.Models;
 
 namespace PurchaseService.Events;
 
-// MassTransit message contracts
-public interface IPurchaseCreated
+// Generic event envelope interface
+public interface IEventEnvelope
 {
-    Guid EventId { get; }
-    DateTime EventTimestamp { get; }
-    int PurchaseId { get; }
-    int BuyerId { get; }
-    int OfferId { get; }
-    DateTime PurchaseDate { get; }
-    decimal Amount { get; }
-    string Status { get; }
-    BuyerDetails BuyerDetails { get; }
-    DateTime CreatedAt { get; }
+    string EventType { get; }
+    string EntityType { get; }
+    string EntityId { get; }
+    DateTime OccurredAt { get; }
+    object Payload { get; }
 }
 
-public interface IPurchaseUpdated
+// Generic event envelope implementation
+public class EventEnvelope<T> : IEventEnvelope where T : class
 {
-    Guid EventId { get; }
-    DateTime EventTimestamp { get; }
-    int PurchaseId { get; }
-    int BuyerId { get; }
-    int OfferId { get; }
-    DateTime PurchaseDate { get; }
-    decimal Amount { get; }
-    string Status { get; }
-    BuyerDetails BuyerDetails { get; }
-    DateTime UpdatedAt { get; }
+    public string EventType { get; set; } = string.Empty;
+    public string EntityType { get; set; } = string.Empty;
+    public string EntityId { get; set; } = string.Empty;
+    public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
+    public T Payload { get; set; } = default!;
+    
+    // For interface compatibility
+    object IEventEnvelope.Payload => Payload;
 }
 
-public class PurchaseCreatedEvent : IPurchaseCreated
+// Purchase-specific event envelopes
+public interface IPurchaseCreated : IEventEnvelope { }
+public interface IPurchaseUpdated : IEventEnvelope { }
+
+public class PurchaseCreated : EventEnvelope<PurchaseCreatedPayload>, IPurchaseCreated
 {
-    public Guid EventId { get; set; } = Guid.NewGuid();
-    public DateTime EventTimestamp { get; set; } = DateTime.UtcNow;
+    public PurchaseCreated()
+    {
+        EventType = "PurchaseCreated";
+        EntityType = "PURCHASE";
+    }
+}
+
+public class PurchaseUpdated : EventEnvelope<PurchaseUpdatedPayload>, IPurchaseUpdated
+{
+    public PurchaseUpdated()
+    {
+        EventType = "PurchaseUpdated";
+        EntityType = "PURCHASE";
+    }
+}
+
+// Payload classes
+public class PurchaseCreatedPayload
+{
     public int PurchaseId { get; set; }
     public int BuyerId { get; set; }
     public int OfferId { get; set; }
@@ -45,10 +60,8 @@ public class PurchaseCreatedEvent : IPurchaseCreated
     public DateTime CreatedAt { get; set; }
 }
 
-public class PurchaseUpdatedEvent : IPurchaseUpdated
+public class PurchaseUpdatedPayload
 {
-    public Guid EventId { get; set; } = Guid.NewGuid();
-    public DateTime EventTimestamp { get; set; } = DateTime.UtcNow;
     public int PurchaseId { get; set; }
     public int BuyerId { get; set; }
     public int OfferId { get; set; }

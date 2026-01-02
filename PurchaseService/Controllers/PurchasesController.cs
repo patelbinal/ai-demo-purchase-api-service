@@ -97,16 +97,21 @@ public class PurchasesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Publish PurchaseCreated event
-            var purchaseCreatedEvent = new PurchaseCreatedEvent
+            var purchaseCreatedEvent = new PurchaseCreated
             {
-                PurchaseId = purchase.PurchaseId,
-                BuyerId = purchase.BuyerId,
-                OfferId = purchase.OfferId,
-                PurchaseDate = purchase.PurchaseDate,
-                Amount = purchase.Amount,
-                Status = purchase.Status,
-                BuyerDetails = purchase.BuyerDetails,
-                CreatedAt = purchase.CreatedAt
+                EntityId = purchase.PurchaseId.ToString(),
+                OccurredAt = DateTime.UtcNow,
+                Payload = new PurchaseCreatedPayload
+                {
+                    PurchaseId = purchase.PurchaseId,
+                    BuyerId = purchase.BuyerId,
+                    OfferId = purchase.OfferId,
+                    PurchaseDate = purchase.PurchaseDate,
+                    Amount = purchase.Amount,
+                    Status = purchase.Status,
+                    BuyerDetails = purchase.BuyerDetails,
+                    CreatedAt = purchase.CreatedAt
+                }
             };
 
             await _eventPublisher.PublishAsync(purchaseCreatedEvent);
@@ -150,16 +155,21 @@ public class PurchasesController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Publish PurchaseUpdated event
-            var purchaseUpdatedEvent = new PurchaseUpdatedEvent
+            var purchaseUpdatedEvent = new PurchaseUpdated
             {
-                PurchaseId = existingPurchase.PurchaseId,
-                BuyerId = existingPurchase.BuyerId,
-                OfferId = existingPurchase.OfferId,
-                PurchaseDate = existingPurchase.PurchaseDate,
-                Amount = existingPurchase.Amount,
-                Status = existingPurchase.Status,
-                BuyerDetails = existingPurchase.BuyerDetails,
-                UpdatedAt = existingPurchase.UpdatedAt
+                EntityId = existingPurchase.PurchaseId.ToString(),
+                OccurredAt = DateTime.UtcNow,
+                Payload = new PurchaseUpdatedPayload
+                {
+                    PurchaseId = existingPurchase.PurchaseId,
+                    BuyerId = existingPurchase.BuyerId,
+                    OfferId = existingPurchase.OfferId,
+                    PurchaseDate = existingPurchase.PurchaseDate,
+                    Amount = existingPurchase.Amount,
+                    Status = existingPurchase.Status,
+                    BuyerDetails = existingPurchase.BuyerDetails,
+                    UpdatedAt = existingPurchase.UpdatedAt
+                }
             };
 
             await _eventPublisher.PublishAsync(purchaseUpdatedEvent);

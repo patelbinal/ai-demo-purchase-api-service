@@ -29,8 +29,17 @@ builder.Services.AddMassTransit(x =>
         });
 
         // Configure message topology
-        cfg.Message<IPurchaseCreated>(x => x.SetEntityName("Purchase"));
-        cfg.Message<IPurchaseUpdated>(x => x.SetEntityName("Purchase"));
+        cfg.Message<IPurchaseCreated>(x => 
+        {
+            x.SetEntityName("purchase-created");
+        });
+        cfg.Message<IPurchaseUpdated>(x => 
+        {
+            x.SetEntityName("purchase-updated"); 
+        });
+        
+        cfg.Publish<IPurchaseCreated>(x => x.ExchangeType = "topic");
+        cfg.Publish<IPurchaseUpdated>(x => x.ExchangeType = "topic");
 
         cfg.ConfigureEndpoints(context);
     });
